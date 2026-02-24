@@ -59,7 +59,7 @@ filtered_df["BMI Category"] = filtered_df["bmi"].apply(bmi_category)
 # ===============================
 # KPI CALCULATIONS
 # ===============================
-high_risk_count = filtered_df[filtered_df["High Risk Score"] = 1].shape[0]
+high_risk_count = filtered_df[filtered_df["High Risk Score"] ==1].shape[0]
 avg_risk_score = round(filtered_df["heart_disease_risk_score"].mean(), 2)
 high_bp = filtered_df[filtered_df["blood_pressure_systolic"] > 140].shape[0]
 diabetic_count = filtered_df[filtered_df["diabetes"] == "Yes"].shape[0]
