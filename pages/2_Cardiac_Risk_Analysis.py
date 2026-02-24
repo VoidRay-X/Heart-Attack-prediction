@@ -78,7 +78,10 @@ smokers_heart_attack_rate = round(
     (smoker_heart_attacks / total_smokers) * 100
     if total_smokers > 0 else 0,2)
 
-col.markdown(kpi_card("Smokers Heart Attack Rate (%)", f"{smokers_heart_attack_rate}%"),unsafe_allow_html=True)
+col1.markdown(
+    kpi_card("Smokers Heart Attack Rate (%)", f"{smokers_heart_attack_rate}%"),
+    unsafe_allow_html=True
+)
 
 diabetic_df = filtered_df[filtered_df["diabetes"] == True]
 total_diabetics = len(diabetic_df)
