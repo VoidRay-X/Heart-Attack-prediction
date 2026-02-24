@@ -59,6 +59,8 @@ filtered_df["BMI Category"] = filtered_df["bmi"].apply(bmi_category)
 # ===============================
 # KPI CALCULATIONS
 # ===============================
+heart_attack_pct = round(filtered_df["heart_attack"].mean() * 100, 2)
+
 filtered_df["High Risk Score"] = (
     (
         filtered_df["diabetes"].isin([True, "Yes", 1]).astype(int)
@@ -68,10 +70,24 @@ filtered_df["High Risk Score"] = (
 ).astype(int)
 
 high_risk_count = filtered_df["High Risk Score"].sum()
-avg_risk_score = round(filtered_df["heart_disease_risk_score"].mean(), 2)
-high_bp = filtered_df[filtered_df["blood_pressure_systolic"] > 140].shape[0]
-diabetic_count = filtered_df[filtered_df["diabetes"] == "Yes"].shape[0]
 
+smokers_df = filtered_df[filtered_df["smoking_status"].str.lower().isin(["current", "former"])]
+total_smokers = len(smokers_df)
+smoker_heart_attacks = smokers_df["heart_attack"].sum()
+smokers_heart_attack_rate = round(
+    (smoker_heart_attacks / total_smokers) * 100
+    if total_smokers > 0 else 0,2)
+
+col.markdown(kpi_card("Smokers Heart Attack Rate (%)", f"{smokers_heart_attack_rate}%"),unsafe_allow_html=True)
+
+diabetic_df = filtered_df[filtered_df["diabetes"] == True]
+total_diabetics = len(diabetic_df)
+diabetic_heart_attacks = diabetic_df["heart_attack"].sum()
+diabetes_heart_attack_rate = round(
+    (diabetic_heart_attacks / total_diabetics) * 100
+    if total_diabetics > 0 else 0,2)
+
+diabetic_df = filtered_df[filtered_df["diabetes"] == "Yes"]
 # ===============================
 # KPI CARD FUNCTION
 # ===============================
