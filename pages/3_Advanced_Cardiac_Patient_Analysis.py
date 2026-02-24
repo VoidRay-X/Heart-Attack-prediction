@@ -52,8 +52,20 @@ filtered_df["Risk Category"] = filtered_df["heart_disease_risk_score"].apply(ris
 # ===============================
 avg_heart_rate = round(filtered_df["heart_rate"].mean(), 1)
 avg_max_hr = round(filtered_df["max_heart_rate"].mean(), 1)
-exercise_angina_pct = round((filtered_df["exercise_angina"] == "Yes").mean() * 100, 2)
+
+total_patients = filtered_df["patient_id"].nunique()
+angina_patients = filtered_df.loc[filtered_df["exercise_angina"] == True,"patient_id"].nunique()
+exercise_angina_pct = round(
+    (angina_patients / total_patients) * 100
+    if total_patients > 0 else 0,2)
+
 st_depression_pct = round((filtered_df["st_depression"] > 2).mean() * 100, 2)
+
+total_patients = filtered_df["patient_id"].nunique()
+vessel_patients = filtered_df.loc[filtered_df["num_major_vessels"] >= 2,"patient_id"].nunique()
+major_vessels_pct = round(
+    (vessel_patients / total_patients) * 100
+    if total_patients > 0 else 0,2)
 
 # ===============================
 # KPI CARDS
@@ -73,12 +85,14 @@ def kpi_card(title, value):
         </div>
     """
 
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5 = st.columns(5)
 
 col1.markdown(kpi_card("Avg Heart Rate", avg_heart_rate), unsafe_allow_html=True)
 col2.markdown(kpi_card("Avg Max Heart Rate", avg_max_hr), unsafe_allow_html=True)
 col3.markdown(kpi_card("Exercise-Induced Angina (%)", f"{exercise_angina_pct}%"), unsafe_allow_html=True)
 col4.markdown(kpi_card("ST Depression > 2 (%)", f"{st_depression_pct}%"), unsafe_allow_html=True)
+col5.markdown(kpi_card("Patients with ≥2 Major Vessels %", f"{major_vessels_pct}%"), unsafe_allow_html=True)
+
 
 st.divider()
 
