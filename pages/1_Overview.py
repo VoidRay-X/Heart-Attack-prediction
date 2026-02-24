@@ -55,8 +55,8 @@ def kpi_card(title, value):
             height:120px;
             box-shadow:0px 2px 6px rgba(0,0,0,0.1);
         ">
-            <div style="font-size:14px; font-weight:600;">{title}</div>
-            <div style="font-size:32px; font-weight:bold; margin-top:10px;">{value}</div>
+            <div style="font-size:14px; font-weight:600; color:black;">{title}</div>
+            <div style="font-size:32px; font-weight:bold; margin-top:10px; color:black;">{value}</div>
         </div>
     """
 
