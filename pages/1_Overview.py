@@ -6,6 +6,16 @@ from utils import sidebar_filters
 
 st.set_page_config(layout="wide")
 
+st.markdown("""
+<style>
+    .metric-container {
+        background-color:#f5f5f5;
+        padding:15px;
+        border-radius:10px;
+        text-align:center;
+    }
+</style>
+""", unsafe_allow_html=True)
 # ===============================
 # LOAD DATA
 # ===============================
