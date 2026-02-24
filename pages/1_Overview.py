@@ -12,6 +12,11 @@ st.set_page_config(layout="wide")
 df = load_data()
 filtered_df = sidebar_filters(df)
 
+# Check if data is empty after filtering
+if filtered_df.empty:
+    st.warning("No data available for the selected filters.")
+    st.stop()
+
 # ===============================
 # HEADER
 # ===============================
@@ -51,7 +56,7 @@ high_bp = filtered_df[
 ].shape[0]
 
 # ===============================
-# KPI CARD FUNCTION
+# KPI CARD FUNCTION (Directly renders)
 # ===============================
 def kpi_card(title, value):
     st.markdown(f"""
@@ -72,7 +77,6 @@ def kpi_card(title, value):
         </div>
     """, unsafe_allow_html=True)
 
-
 # ===============================
 # KPI SECTION
 # ===============================
@@ -92,6 +96,8 @@ with col4:
 
 with col5:
     kpi_card("Patients with High Blood Pressure", high_bp)
+
+st.divider()
 
 # ===============================
 # ROW 1
