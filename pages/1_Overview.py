@@ -6,16 +6,6 @@ from utils import sidebar_filters
 
 st.set_page_config(layout="wide")
 
-st.markdown("""
-<style>
-    .metric-container {
-        background-color:#f5f5f5;
-        padding:15px;
-        border-radius:10px;
-        text-align:center;
-    }
-</style>
-""", unsafe_allow_html=True)
 # ===============================
 # LOAD DATA
 # ===============================
@@ -25,34 +15,53 @@ filtered_df = sidebar_filters(df)
 # ===============================
 # HEADER
 # ===============================
-st.markdown(
-    """
-    <div style='background-color:#b23a3a;padding:20px;border-radius:10px'>
-        <h1 style='color:white;text-align:center;'>
+st.markdown("""
+    <div style='background-color:#b23a3a;
+                padding:20px;
+                border-radius:12px;
+                margin-bottom:20px'>
+        <h1 style='color:white;
+                   text-align:center;
+                   margin:0'>
         Healthcare Risk Monitoring Dashboard
         </h1>
     </div>
-    """,
-    unsafe_allow_html=True
+""", unsafe_allow_html=True)
+
+# ===============================
+# KPI CALCULATIONS
+# ===============================
+total_patients = len(filtered_df)
+
+abnormal_bmi = filtered_df[
+    (filtered_df["bmi"] < 18.5) |
+    (filtered_df["bmi"] > 25)
+].shape[0]
+
+inactive_pct = round(
+    (filtered_df["physical_activity"] == "Low").mean() * 100, 2
 )
 
-st.write("")
+high_chol = filtered_df[
+    filtered_df["cholesterol_mg_dl"] > 240
+].shape[0]
+
+high_bp = filtered_df[
+    filtered_df["blood_pressure_systolic"] > 140
+].shape[0]
 
 # ===============================
-# KPI SECTION
+# KPI CARD FUNCTION
 # ===============================
-# ===============================
-# KPI SECTION (Improved)
-# ===============================
-
 def kpi_card(title, value):
-    st.markdown(f"""
+    return f"""
         <div style="
             background-color:#f5f5f5;
             padding:18px;
             border-radius:12px;
             text-align:center;
             height:120px;
+            box-shadow:0px 2px 6px rgba(0,0,0,0.1);
         ">
             <div style="font-size:14px; font-weight:600;">
                 {title}
@@ -61,22 +70,36 @@ def kpi_card(title, value):
                 {value}
             </div>
         </div>
-    """, unsafe_allow_html=True)
+    """
 
-
+# ===============================
+# KPI SECTION
+# ===============================
 col1, col2, col3, col4, col5 = st.columns(5)
 
-col1.markdown(kpi_card("Total Registered Patients", f"{total_patients:,}"), unsafe_allow_html=True)
-col2.markdown(kpi_card("Patients with Abnormal BMI", abnormal_bmi), unsafe_allow_html=True)
-col3.markdown(kpi_card("Physically Inactive Patients (%)", f"{inactive_pct}%"), unsafe_allow_html=True)
-col4.markdown(kpi_card("Patients with High Cholesterol", high_chol), unsafe_allow_html=True)
-col5.markdown(kpi_card("Patients with High Blood Pressure", high_bp), unsafe_allow_html=True)
+with col1:
+    st.markdown(kpi_card("Total Registered Patients", f"{total_patients:,}"), unsafe_allow_html=True)
+
+with col2:
+    st.markdown(kpi_card("Patients with Abnormal BMI", abnormal_bmi), unsafe_allow_html=True)
+
+with col3:
+    st.markdown(kpi_card("Physically Inactive Patients (%)", f"{inactive_pct}%"), unsafe_allow_html=True)
+
+with col4:
+    st.markdown(kpi_card("Patients with High Cholesterol", high_chol), unsafe_allow_html=True)
+
+with col5:
+    st.markdown(kpi_card("Patients with High Blood Pressure", high_bp), unsafe_allow_html=True)
+
+st.divider()
 
 # ===============================
 # ROW 1
 # ===============================
 col_left, col_right = st.columns(2)
 
+# Smoking vs Heart Attack (Percentage Stacked)
 with col_left:
     st.subheader("Smoking vs Heart Attack (%)")
 
@@ -86,7 +109,6 @@ with col_left:
         .reset_index(name="count")
     )
 
-    # Convert to percentage
     smoking_chart["percentage"] = (
         smoking_chart.groupby("heart_attack")["count"]
         .transform(lambda x: x / x.sum() * 100)
@@ -102,17 +124,21 @@ with col_left:
         color_discrete_sequence=["#8B0000", "#C04040", "#E99696"]
     )
 
-    fig1.update_traces(textposition="inside")
+    fig1.update_traces(
+        textposition="inside",
+        insidetextanchor="middle"
+    )
 
     fig1.update_layout(
         yaxis_title="Percentage (%)",
         xaxis_title="Heart Attack",
-        yaxis=dict(range=[0, 100])
+        yaxis=dict(range=[0, 100]),
+        legend_title="Smoking Status"
     )
 
     st.plotly_chart(fig1, use_container_width=True)
 
-# Alcohol Intake Impact
+# Alcohol Intake Pie
 with col_right:
     st.subheader("Alcohol Intake Impact")
 
@@ -140,7 +166,7 @@ st.divider()
 # ===============================
 col_left2, col_right2 = st.columns(2)
 
-# Physical Activity Impact
+# Physical Activity Pie
 with col_left2:
     st.subheader("Physical Activity Impact")
 
@@ -161,7 +187,7 @@ with col_left2:
 
     st.plotly_chart(fig3, use_container_width=True)
 
-# BP vs Cholesterol
+# BP vs Cholesterol Scatter
 with col_right2:
     st.subheader("BP vs Cholesterol")
 
@@ -171,6 +197,11 @@ with col_right2:
         y="blood_pressure_systolic",
         color="heart_attack",
         color_discrete_sequence=["#C04040", "#8B0000"]
+    )
+
+    fig4.update_layout(
+        xaxis_title="Cholesterol (mg/dL)",
+        yaxis_title="Systolic Blood Pressure"
     )
 
     st.plotly_chart(fig4, use_container_width=True)
