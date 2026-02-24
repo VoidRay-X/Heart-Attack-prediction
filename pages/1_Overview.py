@@ -41,46 +41,73 @@ st.write("")
 # ===============================
 # KPI SECTION
 # ===============================
+# ===============================
+# KPI SECTION (Improved)
+# ===============================
+
+def kpi_card(title, value):
+    st.markdown(f"""
+        <div style="
+            background-color:#f5f5f5;
+            padding:18px;
+            border-radius:12px;
+            text-align:center;
+            height:120px;
+        ">
+            <div style="font-size:14px; font-weight:600;">
+                {title}
+            </div>
+            <div style="font-size:32px; font-weight:bold; margin-top:10px;">
+                {value}
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+
 col1, col2, col3, col4, col5 = st.columns(5)
 
-total_patients = len(filtered_df)
-abnormal_bmi = filtered_df[(filtered_df["bmi"] < 18.5) | (filtered_df["bmi"] > 25)].shape[0]
-inactive_pct = round(
-    (filtered_df["physical_activity"] == "Low").mean() * 100, 2
-)
-high_chol = filtered_df[filtered_df["cholesterol_mg_dl"] > 240].shape[0]
-high_bp = filtered_df[filtered_df["blood_pressure_systolic"] > 140].shape[0]
-
-col1.metric("Total Registered Patients", f"{total_patients:,}")
-col2.metric("Patients with Abnormal BMI", abnormal_bmi)
-col3.metric("Physically Inactive Patients (%)", inactive_pct)
-col4.metric("Patients with High Cholesterol", high_chol)
-col5.metric("Patients with High Blood Pressure", high_bp)
-
-st.divider()
+col1.markdown(kpi_card("Total Registered Patients", f"{total_patients:,}"), unsafe_allow_html=True)
+col2.markdown(kpi_card("Patients with Abnormal BMI", abnormal_bmi), unsafe_allow_html=True)
+col3.markdown(kpi_card("Physically Inactive Patients (%)", f"{inactive_pct}%"), unsafe_allow_html=True)
+col4.markdown(kpi_card("Patients with High Cholesterol", high_chol), unsafe_allow_html=True)
+col5.markdown(kpi_card("Patients with High Blood Pressure", high_bp), unsafe_allow_html=True)
 
 # ===============================
 # ROW 1
 # ===============================
 col_left, col_right = st.columns(2)
 
-# Smoking vs Heart Attack
 with col_left:
-    st.subheader("Smoking vs Heart Attack")
+    st.subheader("Smoking vs Heart Attack (%)")
 
     smoking_chart = (
-        filtered_df.groupby(["smoking_status", "heart_attack"])
+        filtered_df.groupby(["heart_attack", "smoking_status"])
         .size()
         .reset_index(name="count")
+    )
+
+    # Convert to percentage
+    smoking_chart["percentage"] = (
+        smoking_chart.groupby("heart_attack")["count"]
+        .transform(lambda x: x / x.sum() * 100)
     )
 
     fig1 = px.bar(
         smoking_chart,
         x="heart_attack",
-        y="count",
+        y="percentage",
         color="smoking_status",
-        barmode="group",
+        text=smoking_chart["percentage"].round(1).astype(str) + "%",
+        barmode="stack",
         color_discrete_sequence=["#8B0000", "#C04040", "#E99696"]
+    )
+
+    fig1.update_traces(textposition="inside")
+
+    fig1.update_layout(
+        yaxis_title="Percentage (%)",
+        xaxis_title="Heart Attack",
+        yaxis=dict(range=[0, 100])
     )
 
     st.plotly_chart(fig1, use_container_width=True)
