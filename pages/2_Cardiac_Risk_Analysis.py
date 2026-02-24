@@ -78,11 +78,6 @@ smokers_heart_attack_rate = round(
     (smoker_heart_attacks / total_smokers) * 100
     if total_smokers > 0 else 0,2)
 
-col1.markdown(
-    kpi_card("Smokers Heart Attack Rate (%)", f"{smokers_heart_attack_rate}%"),
-    unsafe_allow_html=True
-)
-
 diabetic_df = filtered_df[filtered_df["diabetes"] == True]
 total_diabetics = len(diabetic_df)
 diabetic_heart_attacks = diabetic_df["heart_attack"].sum()
@@ -90,7 +85,6 @@ diabetes_heart_attack_rate = round(
     (diabetic_heart_attacks / total_diabetics) * 100
     if total_diabetics > 0 else 0,2)
 
-diabetic_df = filtered_df[filtered_df["diabetes"] == "Yes"]
 # ===============================
 # KPI CARD FUNCTION
 # ===============================
@@ -114,10 +108,10 @@ def kpi_card(title, value):
 # ===============================
 col1, col2, col3, col4 = st.columns(4)
 
-col1.markdown(kpi_card("High Risk Patient Count", high_risk_count), unsafe_allow_html=True)
-col2.markdown(kpi_card("Average Risk Score", avg_risk_score), unsafe_allow_html=True)
-col3.markdown(kpi_card("High BP Patients", high_bp), unsafe_allow_html=True)
-col4.markdown(kpi_card("Diabetic Patients", diabetic_count), unsafe_allow_html=True)
+col1.markdown(kpi_card("Heart Attack Rate%", heart_attack_pct), unsafe_allow_html=True)
+col2.markdown(kpi_card("High Risk Patient Count", high_risk_count), unsafe_allow_html=True)
+col3.markdown(kpi_card("Smokers Heart Attack Rate (%)", smokers_heart_attack_rate), unsafe_allow_html=True)
+col4.markdown(kpi_card("Diabetes Heart Attack Rate (%)", diabetes_heart_attack_rate), unsafe_allow_html=True)
 
 st.divider()
 
