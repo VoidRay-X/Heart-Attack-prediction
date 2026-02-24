@@ -37,23 +37,20 @@ st.markdown("""
 # KPI CALCULATIONS
 # ===============================
 total_patients = len(filtered_df)
-
-abnormal_bmi = filtered_df[
-    (filtered_df["bmi"] < 18.5) |
-    (filtered_df["bmi"] > 25)
-].shape[0]
-
+abnormal_bmi = filtered_df[(filtered_df["bmi"] < 18.5) | (filtered_df["bmi"] > 25)].shape[0]
 inactive_pct = round(
     (filtered_df["physical_activity"] == "Low").mean() * 100, 2
 )
+high_chol = filtered_df[filtered_df["cholesterol_mg_dl"] > 240].shape[0]
+high_bp = filtered_df[filtered_df["blood_pressure_systolic"] > 140].shape[0]
 
-high_chol = filtered_df[
-    filtered_df["cholesterol_mg_dl"] > 240
-].shape[0]
+col1.metric("Total Registered Patients", f"{total_patients:,}")
+col2.metric("Patients with Abnormal BMI", abnormal_bmi)
+col3.metric("Physically Inactive Patients (%)", inactive_pct)
+col4.metric("Patients with High Cholesterol", high_chol)
+col5.metric("Patients with High Blood Pressure", high_bp)
 
-high_bp = filtered_df[
-    filtered_df["blood_pressure_systolic"] > 140
-].shape[0]
+st.divider()
 
 # ===============================
 # KPI CARD FUNCTION (Directly renders)
