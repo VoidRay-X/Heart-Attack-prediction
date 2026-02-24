@@ -36,6 +36,9 @@ st.markdown("""
 # ===============================
 # KPI CALCULATIONS
 # ===============================
+
+col1, col2, col3, col4, col5 = st.columns(5)
+
 total_patients = len(filtered_df)
 abnormal_bmi = filtered_df[(filtered_df["bmi"] < 18.5) | (filtered_df["bmi"] > 25)].shape[0]
 inactive_pct = round(
