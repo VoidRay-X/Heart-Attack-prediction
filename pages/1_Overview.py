@@ -54,7 +54,7 @@ high_bp = filtered_df[
 # KPI CARD FUNCTION
 # ===============================
 def kpi_card(title, value):
-    return f"""
+    st.markdown(f"""
         <div style="
             background-color:#f5f5f5;
             padding:18px;
@@ -70,7 +70,8 @@ def kpi_card(title, value):
                 {value}
             </div>
         </div>
-    """
+    """, unsafe_allow_html=True)
+
 
 # ===============================
 # KPI SECTION
@@ -78,21 +79,19 @@ def kpi_card(title, value):
 col1, col2, col3, col4, col5 = st.columns(5)
 
 with col1:
-    st.markdown(kpi_card("Total Registered Patients", f"{total_patients:,}"), unsafe_allow_html=True)
+    kpi_card("Total Registered Patients", f"{total_patients:,}")
 
 with col2:
-    st.markdown(kpi_card("Patients with Abnormal BMI", abnormal_bmi), unsafe_allow_html=True)
+    kpi_card("Patients with Abnormal BMI", abnormal_bmi)
 
 with col3:
-    st.markdown(kpi_card("Physically Inactive Patients (%)", f"{inactive_pct}%"), unsafe_allow_html=True)
+    kpi_card("Physically Inactive Patients (%)", f"{inactive_pct}%")
 
 with col4:
-    st.markdown(kpi_card("Patients with High Cholesterol", high_chol), unsafe_allow_html=True)
+    kpi_card("Patients with High Cholesterol", high_chol)
 
 with col5:
-    st.markdown(kpi_card("Patients with High Blood Pressure", high_bp), unsafe_allow_html=True)
-
-st.divider()
+    kpi_card("Patients with High Blood Pressure", high_bp)
 
 # ===============================
 # ROW 1
