@@ -1,227 +1,72 @@
-# ==========================================================
-# ❤️ Heart Attack Prediction Model - Final Production Code
-# ==========================================================
+# train_model.py
 
-# ================================
-# 1️⃣ Import Libraries
-# ================================
-import os
-import json
-import joblib
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import (
-    accuracy_score,
-    classification_report,
-    roc_curve,
-    auc,
-    precision_score,
-    recall_score,
-    f1_score
-)
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_curve, auc
 
-from statsmodels.stats.outliers_influence import variance_inflation_factor
-import statsmodels.api as sm
+def train_model():
 
-# ================================
-# 2️⃣ Create Required Folders FIRST
-# ================================
-os.makedirs("models", exist_ok=True)
-os.makedirs("outputs", exist_ok=True)
+    df_patients = pd.read_csv("clean_patients.csv")
+    df_heart = pd.read_csv("clean_heart_records.csv")
+    df = pd.merge(df_patients, df_heart, on="patient_id")
 
-# ================================
-# 3️⃣ Load Dataset
-# ================================
-df_patients = pd.read_csv("clean_patients.csv")
-df_heart = pd.read_csv("clean_heart_records.csv")
-df = pd.merge(df_patients, df_heart, on="patient_id")
+    df = df.dropna().drop_duplicates()
 
-print("Initial Shape:", df.shape)
+    X = df.drop(columns=['heart_attack', 'patient_id'])
+    y = df['heart_attack']
 
-# ================================
-# 4️⃣ Clean Data
-# ================================
-df = df.dropna()
-df = df.drop_duplicates()
+    categorical_cols = X.select_dtypes(include='object').columns.tolist()
+    numeric_cols = X.select_dtypes(exclude='object').columns.tolist()
 
-print("Shape After Cleaning:", df.shape)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42, stratify=y
+    )
 
-# ================================
-# 5️⃣ Train / Predict Split
-# ================================
-train_df = df.iloc[:10000].copy()
-predict_df = df.iloc[10000:].copy()
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", "passthrough", numeric_cols),
+            ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_cols)
+        ]
+    )
 
-print("Train Shape:", train_df.shape)
-print("Remaining Shape:", predict_df.shape)
+    model = Pipeline(steps=[
+        ("preprocessor", preprocessor),
+        ("model", RandomForestClassifier(
+            n_estimators=300,
+            class_weight="balanced",
+            random_state=42,
+            n_jobs=-1
+        ))
+    ])
 
-# ================================
-# 6️⃣ Features & Target
-# ================================
-X = train_df.drop(columns=['heart_attack', 'patient_id'])
-y = train_df['heart_attack']
+    cv_scores = cross_val_score(model, X_train, y_train, cv=5, scoring="accuracy")
 
-categorical_cols = X.select_dtypes(include='object').columns.tolist()
-numeric_cols = X.select_dtypes(exclude='object').columns.tolist()
+    model.fit(X_train, y_train)
 
-# ================================
-# 7️⃣ VIF Feature Reduction
-# ================================
-X_numeric = pd.get_dummies(X, drop_first=True).astype(float)
+    y_pred = model.predict(X_test)
+    y_prob = model.predict_proba(X_test)[:, 1]
 
-target_features_count = 16
-features_to_keep = X_numeric.columns.tolist()
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred)
+    recall = recall_score(y_test, y_pred)
+    f1 = f1_score(y_test, y_pred)
 
-while len(features_to_keep) > target_features_count:
-    X_temp = sm.add_constant(X_numeric[features_to_keep])
-    vif = pd.DataFrame()
-    vif["feature"] = X_temp.columns
-    vif["VIF"] = [
-        variance_inflation_factor(X_temp.values, i)
-        for i in range(X_temp.shape[1])
-    ]
-    vif = vif.sort_values(by="VIF", ascending=False)
+    fpr, tpr, _ = roc_curve(y_test, y_prob)
+    roc_auc = auc(fpr, tpr)
 
-    feature_to_remove = vif[vif["feature"] != "const"]["feature"].iloc[0]
-    print(f"Dropping {feature_to_remove}")
-    features_to_keep.remove(feature_to_remove)
-
-selected_numeric_cols = [col for col in numeric_cols if col in features_to_keep]
-selected_categorical_cols = [
-    col for col in categorical_cols
-    if any(col in f for f in features_to_keep)
-]
-
-X_reduced = X[selected_numeric_cols + selected_categorical_cols]
-
-print("Final Feature Count:", len(selected_numeric_cols + selected_categorical_cols))
-
-# ================================
-# 8️⃣ Train-Test Split
-# ================================
-X_train, X_test, y_train, y_test = train_test_split(
-    X_reduced,
-    y,
-    test_size=0.2,
-    random_state=42,
-    stratify=y
-)
-
-# ================================
-# 9️⃣ Pipeline
-# ================================
-preprocessor = ColumnTransformer(
-    transformers=[
-        ("num", "passthrough", selected_numeric_cols),
-        ("cat", OneHotEncoder(handle_unknown="ignore"), selected_categorical_cols)
-    ]
-)
-
-pipeline = Pipeline(steps=[
-    ("preprocessor", preprocessor),
-    ("model", RandomForestClassifier(
-        n_estimators=500,
-        min_samples_split=5,
-        min_samples_leaf=2,
-        max_features="sqrt",
-        class_weight="balanced",
-        random_state=42,
-        n_jobs=-1
-    ))
-])
-
-# ================================
-# 🔟 Cross Validation
-# ================================
-cv_scores = cross_val_score(
-    pipeline,
-    X_train,
-    y_train,
-    cv=5,
-    scoring="accuracy"
-)
-
-print("CV Mean Accuracy:", cv_scores.mean())
-
-# ================================
-# 1️⃣1️⃣ Train Final Model
-# ================================
-pipeline.fit(X_train, y_train)
-
-# ================================
-# 1️⃣2️⃣ Evaluate Model
-# ================================
-y_pred = pipeline.predict(X_test)
-y_prob = pipeline.predict_proba(X_test)[:, 1]
-
-accuracy = accuracy_score(y_test, y_pred)
-precision = precision_score(y_test, y_pred)
-recall = recall_score(y_test, y_pred)
-f1 = f1_score(y_test, y_pred)
-
-fpr, tpr, _ = roc_curve(y_test, y_prob)
-roc_auc = auc(fpr, tpr)
-
-print("Test Accuracy:", accuracy)
-
-# ================================
-# 1️⃣3️⃣ Save ROC Curve
-# ================================
-plt.figure()
-plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}")
-plt.plot([0, 1], [0, 1], "--")
-plt.xlabel("False Positive Rate")
-plt.ylabel("True Positive Rate")
-plt.title("ROC Curve")
-plt.legend()
-plt.savefig("outputs/roc_curve.png")
-plt.close()
-
-# ================================
-# 1️⃣4️⃣ Save Model
-# ================================
-model_path = "models/heart_attack_rf_model.pkl"
-joblib.dump(pipeline, model_path)
-print("Model saved.")
-
-# ================================
-# 1️⃣5️⃣ Save Metrics as JSON
-# ================================
-metrics = {
-    "accuracy": round(accuracy, 4),
-    "precision": round(precision, 4),
-    "recall": round(recall, 4),
-    "f1_score": round(f1, 4),
-    "roc_auc": round(roc_auc, 4),
-    "cv_mean_accuracy": round(cv_scores.mean(), 4),
-    "cv_std": round(cv_scores.std(), 4)
-}
-
-with open("outputs/metrics.json", "w") as f:
-    json.dump(metrics, f, indent=4)
-
-print("Metrics saved.")
-
-# ================================
-# 1️⃣6️⃣ Predict on Remaining Data
-# ================================
-if len(predict_df) > 0:
-    X_remaining = predict_df[selected_numeric_cols + selected_categorical_cols]
-    y_remaining = predict_df["heart_attack"]
-
-    y_remaining_pred = pipeline.predict(X_remaining)
-    remaining_accuracy = accuracy_score(y_remaining, y_remaining_pred)
-
-    predict_df["predicted_heart_attack"] = y_remaining_pred
-    predict_df.to_csv("outputs/predictions.csv", index=False)
-
-    print("Remaining Data Accuracy:", remaining_accuracy)
-
-print("✅ Training Complete.")
+    return {
+        "model": model,
+        "accuracy": accuracy,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "roc_auc": roc_auc,
+        "cv_mean": cv_scores.mean(),
+        "fpr": fpr,
+        "tpr": tpr
+    }
