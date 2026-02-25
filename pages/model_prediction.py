@@ -1,52 +1,32 @@
-# ==========================================================
-# 📊 Streamlit KPI Dashboard
-# ==========================================================
-
 import streamlit as st
-import json
-import os
-from PIL import Image
+from train_model import train_model
+import matplotlib.pyplot as plt
 
-st.set_page_config(
-    page_title="Heart Attack Model Dashboard",
-    layout="wide"
-)
+st.title("❤️ Heart Attack Model Performance")
 
-st.title("❤️ Heart Attack Prediction Model Dashboard")
+@st.cache_resource
+def load_training():
+    return train_model()
 
-# ================================
-# Load Metrics
-# ================================
-metrics_path = "outputs/metrics.json"
+data = load_training()
 
-if os.path.exists(metrics_path):
+st.subheader("📊 Model KPIs")
 
-    with open(metrics_path, "r") as f:
-        metrics = json.load(f)
+col1, col2, col3 = st.columns(3)
+col1.metric("Accuracy", f"{data['accuracy']*100:.2f}%")
+col2.metric("Precision", f"{data['precision']*100:.2f}%")
+col3.metric("Recall", f"{data['recall']*100:.2f}%")
 
-    st.subheader("📌 Model Performance KPIs")
+col4, col5, col6 = st.columns(3)
+col4.metric("F1 Score", f"{data['f1']*100:.2f}%")
+col5.metric("ROC-AUC", f"{data['roc_auc']:.3f}")
+col6.metric("CV Mean Accuracy", f"{data['cv_mean']*100:.2f}%")
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Accuracy", f"{metrics['accuracy'] * 100:.2f}%")
-    col2.metric("Precision", f"{metrics['precision'] * 100:.2f}%")
-    col3.metric("Recall", f"{metrics['recall'] * 100:.2f}%")
+st.subheader("📈 ROC Curve")
 
-    col4, col5, col6 = st.columns(3)
-    col4.metric("F1 Score", f"{metrics['f1_score'] * 100:.2f}%")
-    col5.metric("ROC-AUC", f"{metrics['roc_auc']:.3f}")
-    col6.metric("CV Mean Accuracy", f"{metrics['cv_mean_accuracy'] * 100:.2f}%")
+fig, ax = plt.subplots()
+ax.plot(data["fpr"], data["tpr"], label=f"AUC = {data['roc_auc']:.3f}")
+ax.plot([0, 1], [0, 1], "--")
+ax.legend()
 
-else:
-    st.error("⚠️ metrics.json not found. Run model_training.py first.")
-
-# ================================
-# ROC Curve
-# ================================
-roc_path = "outputs/roc_curve.png"
-
-if os.path.exists(roc_path):
-    st.subheader("📈 ROC Curve")
-    image = Image.open(roc_path)
-    st.image(image, use_container_width=True)
-else:
-    st.warning("ROC curve not found.")
+st.pyplot(fig)
