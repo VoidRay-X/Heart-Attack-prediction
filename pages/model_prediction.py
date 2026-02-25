@@ -25,7 +25,7 @@ def load_or_train_model():
         return model, None  # metrics unavailable if loaded from file
     else:
         st.warning("Model not found. Training model... ⏳")
-        model_data = train_model()
+        model_data = train_model()  # must return dict with model & metrics
         os.makedirs("models", exist_ok=True)
         joblib.dump(model_data["model"], MODEL_PATH)
         st.success("Model trained and saved ✅")
