@@ -1,6 +1,7 @@
 # ================================
 # 1️⃣ Import Libraries
 # ================================
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,6 +17,8 @@ from sklearn.metrics import accuracy_score, classification_report, roc_curve, au
 from statsmodels.stats.outliers_influence import variance_inflation_factor
 import statsmodels.api as sm
 
+import joblib
+
 # ================================
 # 2️⃣ Load Dataset
 # ================================
@@ -24,7 +27,6 @@ df_heart = pd.read_csv("clean_heart_records.csv")
 df = pd.merge(df_patients, df_heart, on="patient_id")
 
 print("Shape of dataset:", df.shape)
-display(df.head())
 
 # ================================
 # 3️⃣ Handle Missing Values
@@ -53,16 +55,15 @@ y = train_df['heart_attack']
 # ================================
 # 7️⃣ Identify Column Types
 # ================================
-categorical_cols = X.select_dtypes(include='object').columns
-numeric_cols = X.select_dtypes(exclude='object').columns
+categorical_cols = X.select_dtypes(include='object').columns.tolist()
+numeric_cols = X.select_dtypes(exclude='object').columns.tolist()
 
 # ================================
 # 8️⃣ VIF-Based Feature Reduction (Stop at ~15-16 features)
 # ================================
-# One-hot encode categorical columns for VIF
+# One-hot encode categorical columns for VIF calculation
 X_numeric = pd.get_dummies(X, drop_first=True).astype(float)
 
-# Iteratively remove features with highest VIF until ~15-16 features remain
 target_features_count = 16  # desired number of features
 features_to_keep = X_numeric.columns.tolist()
 
@@ -72,10 +73,10 @@ while len(features_to_keep) > target_features_count:
     vif['feature'] = X_temp.columns
     vif['VIF'] = [variance_inflation_factor(X_temp.values, i) for i in range(X_temp.shape[1])]
     vif = vif.sort_values(by='VIF', ascending=False)
-    
+
     # Drop the feature with the highest VIF (skip 'const')
     feature_to_remove = vif[vif['feature'] != 'const']['feature'].iloc[0]
-    print(f"Dropping {feature_to_remove} with VIF = {vif['VIF'].iloc[0]:.2f}")
+    print(f"Dropping {feature_to_remove} with VIF = {vif.loc[vif['feature'] == feature_to_remove, 'VIF'].values[0]:.2f}")
     features_to_keep.remove(feature_to_remove)
 
 print(f"Selected {len(features_to_keep)} features for modeling.")
@@ -152,8 +153,27 @@ plt.xlabel("False Positive Rate")
 plt.ylabel("True Positive Rate")
 plt.title("ROC Curve")
 plt.legend()
-plt.show()
+plt.savefig("outputs/roc_curve.png")  # Save ROC plot for artifact
+plt.close()
 print("ROC-AUC Score:", roc_auc)
+
+# ================================
+# Save Model and Metrics
+# ================================
+os.makedirs("models", exist_ok=True)
+os.makedirs("outputs", exist_ok=True)
+
+model_filepath = os.path.join("models", "heart_attack_rf_model.pkl")
+joblib.dump(pipeline, model_filepath)
+print(f"Model saved to {model_filepath}")
+
+metrics_filepath = os.path.join("outputs", "metrics.txt")
+with open(metrics_filepath, "w") as f:
+    f.write(f"Test Accuracy: {accuracy_score(y_test, y_test_pred):.4f}\n")
+    f.write(f"ROC-AUC Score: {roc_auc:.4f}\n\n")
+    f.write("Classification Report:\n")
+    f.write(classification_report(y_test, y_test_pred))
+print(f"Metrics saved to {metrics_filepath}")
 
 # ================================
 # 1️⃣5️⃣ Apply Model to Remaining Dataset
@@ -163,8 +183,12 @@ if len(predict_df) > 0:
     y_actual = predict_df['heart_attack']
 
     y_pred_final = pipeline.predict(X_predict)
-    print("Accuracy on Remaining Data:", accuracy_score(y_actual, y_pred_final))
-    
+    final_accuracy = accuracy_score(y_actual, y_pred_final)
+    print("Accuracy on Remaining Data:", final_accuracy)
+
     predict_df['predicted_heart_attack'] = y_pred_final
+    predictions_filepath = os.path.join("outputs", "predictions.csv")
+    predict_df.to_csv(predictions_filepath, index=False)
+    print(f"Predictions saved to {predictions_filepath}")
 else:
     print("No remaining rows for prediction.")
