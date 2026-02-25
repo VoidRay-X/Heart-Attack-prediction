@@ -1,28 +1,30 @@
 import streamlit as st
+import pandas as pd
+import plotly.express as px
 import joblib
 import os
-import matplotlib.pyplot as plt
 import seaborn as sns
+import matplotlib.pyplot as plt
 from data_loader import load_data
 from train_model import train_model  # returns dict with model & metrics
 
-st.title("❤️ Heart Attack Analytics & Prediction Dashboard")
+st.set_page_config(layout="wide")
 
-# ================================
-# Load data
-# ================================
+# ===============================
+# LOAD DATA
+# ===============================
 df = load_data()
 
-# ================================
-# Load or Train Model
-# ================================
+# ===============================
+# LOAD OR TRAIN MODEL
+# ===============================
 MODEL_PATH = "models/heart_attack_rf_model.pkl"
 
 @st.cache_resource
 def load_or_train_model():
     if os.path.exists(MODEL_PATH):
         model = joblib.load(MODEL_PATH)
-        return model, None  # metrics unavailable if loaded from file
+        return model, None
     else:
         st.warning("Model not found. Training model... ⏳")
         model_data = train_model()  # must return dict with model & metrics
@@ -33,52 +35,84 @@ def load_or_train_model():
 
 model, training_data = load_or_train_model()
 
-# ================================
-# KPI Cards and ROC Curve
-# ================================
+# ===============================
+# HEADER
+# ===============================
+st.markdown("""
+    <div style='background-color:#b23a3a;
+                padding:20px;
+                border-radius:12px;
+                margin-bottom:20px'>
+        <h1 style='color:white;
+                   text-align:center;
+                   margin:0'>
+        ❤️ Heart Attack Analytics & Prediction Dashboard
+        </h1>
+    </div>
+""", unsafe_allow_html=True)
+
+# ===============================
+# MODEL METRICS KPI CARDS
+# ===============================
 if training_data:
-    st.subheader("📊 Model Performance KPIs")
+    def kpi_card(title, value):
+        return f"""
+            <div style="
+                background-color:#f5f5f5;
+                padding:18px;
+                border-radius:12px;
+                text-align:center;
+                height:120px;
+                box-shadow:0px 2px 6px rgba(0,0,0,0.1);
+            ">
+                <div style="font-size:14px; font-weight:600; color:black;">{title}</div>
+                <div style="font-size:32px; font-weight:bold; margin-top:10px; color:black;">{value}</div>
+            </div>
+        """
 
-    # KPI cards in two rows
-    kpi1, kpi2, kpi3 = st.columns(3)
-    kpi1.metric("Accuracy", f"{training_data['accuracy']*100:.2f}%")
-    kpi2.metric("Precision", f"{training_data['precision']*100:.2f}%")
-    kpi3.metric("Recall", f"{training_data['recall']*100:.2f}%")
+    col1, col2, col3, col4, col5 = st.columns(5)
+    col1.markdown(kpi_card("Accuracy", f"{training_data['accuracy']*100:.2f}%"), unsafe_allow_html=True)
+    col2.markdown(kpi_card("Precision", f"{training_data['precision']*100:.2f}%"), unsafe_allow_html=True)
+    col3.markdown(kpi_card("Recall", f"{training_data['recall']*100:.2f}%"), unsafe_allow_html=True)
+    col4.markdown(kpi_card("F1 Score", f"{training_data['f1']*100:.2f}%"), unsafe_allow_html=True)
+    col5.markdown(kpi_card("ROC-AUC", f"{training_data['roc_auc']:.3f}"), unsafe_allow_html=True)
 
-    kpi4, kpi5 = st.columns(2)
-    kpi4.metric("F1 Score", f"{training_data['f1']*100:.2f}%")
-    kpi5.metric("ROC-AUC", f"{training_data['roc_auc']:.3f}")
+    st.divider()
 
-    # ROC curve plot
-    st.subheader("📈 ROC Curve")
-    fig, ax = plt.subplots()
-    ax.plot(training_data["fpr"], training_data["tpr"], label=f"AUC = {training_data['roc_auc']:.3f}", linewidth=2)
-    ax.plot([0, 1], [0, 1], "--", color="gray")
-    ax.set_xlabel("False Positive Rate")
-    ax.set_ylabel("True Positive Rate")
-    ax.legend()
-    st.pyplot(fig)
-
-    # Feature Importance Plot
+    # Feature Importance
     st.subheader("🔑 Top 10 Feature Importances")
     fi_df = training_data["feature_importance_df"].head(10)
-    fig2, ax2 = plt.subplots(figsize=(8, 4))
-    sns.barplot(x='importance', y='feature', data=fi_df, ax=ax2)
-    ax2.set_title("Feature Importances")
+    fig, ax = plt.subplots(figsize=(8, 4))
+    sns.barplot(x='importance', y='feature', data=fi_df, ax=ax)
+    ax.set_title("Feature Importances")
+    st.pyplot(fig)
+
+    st.divider()
+
+    # ROC Curve
+    st.subheader("📈 ROC Curve")
+    fig2, ax2 = plt.subplots()
+    ax2.plot(training_data["fpr"], training_data["tpr"], label=f"AUC = {training_data['roc_auc']:.3f}", linewidth=2)
+    ax2.plot([0, 1], [0, 1], "--", color="gray")
+    ax2.set_xlabel("False Positive Rate")
+    ax2.set_ylabel("True Positive Rate")
+    ax2.legend()
     st.pyplot(fig2)
 
 else:
-    st.info("Loaded pre-trained model; KPIs and feature importances are unavailable. Retrain to view metrics.")
+    st.info("Loaded pre-trained model; KPIs and feature importances unavailable.")
 
-# ================================
-# Sidebar navigation
-# ================================
+st.divider()
+
+# ===============================
+# SIDEBAR NAVIGATION
+# ===============================
 st.sidebar.header("Navigation")
 page = st.sidebar.radio("Go to", ["Patient Prediction", "Data Overview"])
 
-# ================================
-# Patient Prediction Page
-# ================================
+# ===============================
+# PATIENT PREDICTION PAGE
+# ===============================
 if page == "Patient Prediction":
     st.subheader("💓 Predict Heart Attack Risk")
 
@@ -94,14 +128,13 @@ if page == "Patient Prediction":
         if st.button("Predict Heart Attack Risk"):
             prediction = model.predict(patient_data)
             prob = model.predict_proba(patient_data)[0][1]
-
             risk_label = "High Risk ❤️" if prediction[0] == 1 else "Low Risk 💚"
             st.metric(label="Prediction", value=risk_label)
             st.write(f"Probability of Heart Attack: **{prob:.2%}**")
 
-# ================================
-# Data Overview Page
-# ================================
+# ===============================
+# DATA OVERVIEW PAGE
+# ===============================
 elif page == "Data Overview":
     st.subheader("📊 Patient Dataset Overview")
     st.dataframe(df.head(20))
