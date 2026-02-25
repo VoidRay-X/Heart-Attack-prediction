@@ -21,7 +21,7 @@ MODEL_PATH = "models/heart_attack_rf_model.pkl"
 def load_or_train_model():
     if os.path.exists(MODEL_PATH):
         model = joblib.load(MODEL_PATH)
-        return model, None  # No metrics loaded if using pre-saved model
+        return model, None  # No metrics available if loaded from file
     else:
         st.warning("Model not found. Training model... ⏳")
         model_data = train_model()  # must return dict with model & metrics
@@ -33,25 +33,27 @@ def load_or_train_model():
 model, training_data = load_or_train_model()
 
 # ================================
-# Show KPIs (if training data is available)
+# KPI Cards (Only if model was trained in this session)
 # ================================
 if training_data:
     st.subheader("📊 Model Performance KPIs")
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Accuracy", f"{training_data['accuracy']*100:.2f}%")
-    col2.metric("Precision", f"{training_data['precision']*100:.2f}%")
-    col3.metric("Recall", f"{training_data['recall']*100:.2f}%")
+    # First row of KPIs
+    kpi1, kpi2, kpi3 = st.columns(3)
+    kpi1.metric("Accuracy", f"{training_data['accuracy']*100:.2f}%")
+    kpi2.metric("Precision", f"{training_data['precision']*100:.2f}%")
+    kpi3.metric("Recall", f"{training_data['recall']*100:.2f}%")
 
-    col4, col5, col6 = st.columns(3)
-    col4.metric("F1 Score", f"{training_data['f1']*100:.2f}%")
-    col5.metric("ROC-AUC", f"{training_data['roc_auc']:.3f}")
-    col6.metric("CV Mean Accuracy", f"{training_data['cv_mean']*100:.2f}%")
+    # Second row of KPIs
+    kpi4, kpi5, kpi6 = st.columns(3)
+    kpi4.metric("F1 Score", f"{training_data['f1']*100:.2f}%")
+    kpi5.metric("ROC-AUC", f"{training_data['roc_auc']:.3f}")
+    kpi6.metric("CV Mean Accuracy", f"{training_data['cv_mean']*100:.2f}%")
 
-    # ROC Curve
+    # ROC Curve below KPI cards
     st.subheader("📈 ROC Curve")
     fig, ax = plt.subplots()
-    ax.plot(training_data["fpr"], training_data["tpr"], label=f"AUC = {training_data['roc_auc']:.3f}")
+    ax.plot(training_data["fpr"], training_data["tpr"], label=f"AUC = {training_data['roc_auc']:.3f}", linewidth=2)
     ax.plot([0, 1], [0, 1], "--", color="gray")
     ax.set_xlabel("False Positive Rate")
     ax.set_ylabel("True Positive Rate")
