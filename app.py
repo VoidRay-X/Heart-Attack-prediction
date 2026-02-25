@@ -1,6 +1,8 @@
 import streamlit as st
 import joblib
+import os
 from data_loader import load_data
+from train_model import train_model  # Make sure this returns {"model": model}
 
 # ================================
 # Page configuration
@@ -19,10 +21,29 @@ Use the sidebar to navigate between pages.
 """)
 
 # ================================
-# Load data and trained model
+# Load data
 # ================================
 df = load_data()
-model = joblib.load("models/heart_attack_rf_model.pkl")
+
+# ================================
+# Load or Train Model
+# ================================
+MODEL_PATH = "models/heart_attack_rf_model.pkl"
+
+@st.cache_resource
+def load_or_train_model():
+    if os.path.exists(MODEL_PATH):
+        model = joblib.load(MODEL_PATH)
+        return model
+    else:
+        st.warning("Model not found. Training model... ⏳")
+        model_data = train_model()  # must return {"model": model}
+        os.makedirs("models", exist_ok=True)
+        joblib.dump(model_data["model"], MODEL_PATH)
+        st.success("Model trained and saved ✅")
+        return model_data["model"]
+
+model = load_or_train_model()
 
 # ================================
 # Sidebar navigation
