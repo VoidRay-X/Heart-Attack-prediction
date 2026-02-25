@@ -1,114 +1,170 @@
-import os
-from datetime import datetime
-import joblib
+# ================================
+# 1️⃣ Import Libraries
+# ================================
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report, roc_auc_score
-from data_loader import load_data  # your existing loader
+from sklearn.metrics import accuracy_score, classification_report, roc_curve, auc
 
-def main():
-    # Load data using your data_loader.py
-    df = load_data()
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+import statsmodels.api as sm
 
-    print(f"Initial dataset shape: {df.shape}")
+# ================================
+# 2️⃣ Load Dataset
+# ================================
+df_patients = pd.read_csv("clean_patients.csv")
+df_heart = pd.read_csv("clean_heart_records.csv")
+df = pd.merge(df_patients, df_heart, on="patient_id")
 
-    # Clean data
-    df = df.dropna()
-    df = df.drop_duplicates()
-    print(f"Shape after cleaning: {df.shape}")
+print("Shape of dataset:", df.shape)
+display(df.head())
 
-    # Split into training and prediction sets
-    train_df = df.iloc[:10000].copy()
-    predict_df = df.iloc[10000:].copy()
+# ================================
+# 3️⃣ Handle Missing Values
+# ================================
+df = df.dropna()
 
-    print(f"Training data shape: {train_df.shape}")
-    print(f"Prediction data shape: {predict_df.shape}")
+# ================================
+# 4️⃣ Remove Duplicates
+# ================================
+df = df.drop_duplicates()
+print("Shape after cleaning:", df.shape)
 
-    # Define features and target
-    X = train_df.drop(columns=['heart_attack', 'patient_id'])
-    y = train_df['heart_attack']
+# ================================
+# 5️⃣ Use First 10,000 Rows for Modeling
+# ================================
+train_df = df.iloc[:10000].copy()
+predict_df = df.iloc[10000:].copy()
+print("Train shape:", train_df.shape, "Predict shape:", predict_df.shape)
 
-    # Identify categorical and numeric columns
-    categorical_cols = X.select_dtypes(include='object').columns
-    numeric_cols = X.select_dtypes(exclude='object').columns
+# ================================
+# 6️⃣ Define Features and Target
+# ================================
+X = train_df.drop(columns=['heart_attack', 'patient_id'])
+y = train_df['heart_attack']
 
-    # Create preprocessing pipeline
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('num', 'passthrough', numeric_cols),
-            ('cat', OneHotEncoder(handle_unknown='ignore'), categorical_cols)
-        ]
-    )
+# ================================
+# 7️⃣ Identify Column Types
+# ================================
+categorical_cols = X.select_dtypes(include='object').columns
+numeric_cols = X.select_dtypes(exclude='object').columns
 
-    # Create full pipeline with RandomForest model
-    pipeline = Pipeline(steps=[
-        ('preprocessor', preprocessor),
-        ('model', RandomForestClassifier(n_estimators=200, random_state=42))
-    ])
+# ================================
+# 8️⃣ VIF-Based Feature Reduction (Stop at ~15-16 features)
+# ================================
+# One-hot encode categorical columns for VIF
+X_numeric = pd.get_dummies(X, drop_first=True).astype(float)
 
-    # Train/test split for evaluation
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
-    )
+# Iteratively remove features with highest VIF until ~15-16 features remain
+target_features_count = 16  # desired number of features
+features_to_keep = X_numeric.columns.tolist()
 
-    # Cross-validation
-    cv_scores = cross_val_score(pipeline, X_train, y_train, cv=5, scoring='accuracy')
-    print(f"Cross-validation accuracy scores: {cv_scores}")
-    print(f"Mean CV accuracy: {cv_scores.mean():.4f}")
-    print(f"Std CV accuracy: {cv_scores.std():.4f}")
+while len(features_to_keep) > target_features_count:
+    X_temp = sm.add_constant(X_numeric[features_to_keep])
+    vif = pd.DataFrame()
+    vif['feature'] = X_temp.columns
+    vif['VIF'] = [variance_inflation_factor(X_temp.values, i) for i in range(X_temp.shape[1])]
+    vif = vif.sort_values(by='VIF', ascending=False)
+    
+    # Drop the feature with the highest VIF (skip 'const')
+    feature_to_remove = vif[vif['feature'] != 'const']['feature'].iloc[0]
+    print(f"Dropping {feature_to_remove} with VIF = {vif['VIF'].iloc[0]:.2f}")
+    features_to_keep.remove(feature_to_remove)
 
-    # Train final model on training data
-    pipeline.fit(X_train, y_train)
+print(f"Selected {len(features_to_keep)} features for modeling.")
 
-    # Evaluate on test set
-    y_test_pred = pipeline.predict(X_test)
-    test_accuracy = accuracy_score(y_test, y_test_pred)
-    print(f"Test set accuracy: {test_accuracy:.4f}")
+# Map back selected features to original columns
+selected_numeric_cols = [col for col in numeric_cols if col in features_to_keep]
+selected_categorical_cols = [col for col in categorical_cols if any(col in f for f in features_to_keep)]
 
-    # Generate classification report
-    clf_report = classification_report(y_test, y_test_pred)
-    print(f"Classification report:\n{clf_report}")
+X_reduced = X[selected_numeric_cols + selected_categorical_cols]
 
-    # Calculate ROC-AUC score
-    y_prob = pipeline.predict_proba(X_test)[:, 1]
-    roc_auc = roc_auc_score(y_test, y_prob)
-    print(f"ROC-AUC score: {roc_auc:.4f}")
+# ================================
+# 9️⃣ Train-Test Split
+# ================================
+X_train, X_test, y_train, y_test = train_test_split(
+    X_reduced, y, test_size=0.2, random_state=42, stratify=y
+)
+print("X_train shape:", X_train.shape, "X_test shape:", X_test.shape)
 
-    # Save the trained model
-    os.makedirs("models", exist_ok=True)
-    model_filepath = os.path.join("models", "heart_attack_rf_model.pkl")
-    joblib.dump(pipeline, model_filepath)
-    print(f"Model saved to {model_filepath}")
+# ================================
+# 🔟 Preprocessing & Pipeline
+# ================================
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', 'passthrough', selected_numeric_cols),
+        ('cat', OneHotEncoder(handle_unknown='ignore'), selected_categorical_cols)
+    ]
+)
 
-    # Save evaluation metrics to text file
-    os.makedirs("outputs", exist_ok=True)
-    metrics_filepath = os.path.join("outputs", "metrics.txt")
-    with open(metrics_filepath, "w") as f:
-        f.write(f"Test Accuracy: {test_accuracy:.4f}\n")
-        f.write(f"ROC-AUC Score: {roc_auc:.4f}\n\n")
-        f.write("Classification Report:\n")
-        f.write(clf_report)
-    print(f"Metrics saved to {metrics_filepath}")
+pipeline = Pipeline(steps=[
+    ('preprocessor', preprocessor),
+    ('model', RandomForestClassifier(
+        n_estimators=500,
+        max_depth=None,
+        min_samples_split=5,
+        min_samples_leaf=2,
+        max_features='sqrt',
+        class_weight='balanced',
+        random_state=42,
+        n_jobs=-1
+    ))
+])
 
-    # Predict on remaining data if available
-    if not predict_df.empty:
-        X_predict = predict_df.drop(columns=['heart_attack', 'patient_id'])
-        y_actual = predict_df['heart_attack']
+# ================================
+# 1️⃣1️⃣ Cross Validation
+# ================================
+cv_scores = cross_val_score(pipeline, X_train, y_train, cv=5, scoring='accuracy')
+print("CV Scores:", cv_scores)
+print("Mean CV Accuracy:", cv_scores.mean())
+print("Std CV:", cv_scores.std())
 
-        y_pred_final = pipeline.predict(X_predict)
-        final_accuracy = accuracy_score(y_actual, y_pred_final)
-        print(f"Accuracy on remaining data: {final_accuracy:.4f}")
+# ================================
+# 1️⃣2️⃣ Train Final Model
+# ================================
+pipeline.fit(X_train, y_train)
 
-        # Save predictions alongside original data
-        predict_df['predicted_heart_attack'] = y_pred_final
-        predictions_filepath = os.path.join("outputs", "predictions.csv")
-        predict_df.to_csv(predictions_filepath, index=False)
-        print(f"Predictions saved to {predictions_filepath}")
-    else:
-        print("No remaining rows available for prediction.")
+# ================================
+# 1️⃣3️⃣ Evaluate on Test Set
+# ================================
+y_test_pred = pipeline.predict(X_test)
+print("Test Accuracy:", accuracy_score(y_test, y_test_pred))
+print(classification_report(y_test, y_test_pred))
 
-if __name__ == "__main__":
-    main()
+# ================================
+# 1️⃣4️⃣ ROC Curve & AUC
+# ================================
+y_prob = pipeline.predict_proba(X_test)[:, 1]
+fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+roc_auc = auc(fpr, tpr)
+
+plt.figure()
+plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}")
+plt.plot([0,1],[0,1],'--')
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve")
+plt.legend()
+plt.show()
+print("ROC-AUC Score:", roc_auc)
+
+# ================================
+# 1️⃣5️⃣ Apply Model to Remaining Dataset
+# ================================
+if len(predict_df) > 0:
+    X_predict = predict_df[selected_numeric_cols + selected_categorical_cols]
+    y_actual = predict_df['heart_attack']
+
+    y_pred_final = pipeline.predict(X_predict)
+    print("Accuracy on Remaining Data:", accuracy_score(y_actual, y_pred_final))
+    
+    predict_df['predicted_heart_attack'] = y_pred_final
+else:
+    print("No remaining rows for prediction.")
