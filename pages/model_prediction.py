@@ -45,10 +45,9 @@ if training_data:
     kpi2.metric("Precision", f"{training_data['precision']*100:.2f}%")
     kpi3.metric("Recall", f"{training_data['recall']*100:.2f}%")
 
-    kpi4, kpi5, kpi6 = st.columns(3)
+    kpi4, kpi5 = st.columns(2)
     kpi4.metric("F1 Score", f"{training_data['f1']*100:.2f}%")
     kpi5.metric("ROC-AUC", f"{training_data['roc_auc']:.3f}")
-    kpi6.metric("CV Mean Accuracy", f"{training_data['cv_mean']*100:.2f}%")
 
     # ROC curve plot
     st.subheader("📈 ROC Curve")
