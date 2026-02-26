@@ -1,67 +1,36 @@
 import streamlit as st
-import joblib
-import os
-from data_loader import load_data
-from train_model import train_model
 
-# ================================
-# Page configuration
-# ================================
-st.set_page_config(
-    page_title="Heart Disease Dashboard",
-    layout="wide"
-)
+st.set_page_config(page_title="Heart Disease Dashboard", layout="wide")
 
-# ================================
-# Session State Initialization
-# ================================
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
+# Initialize session
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
 
 
-# ================================
-# Login Function
-# ================================
 def login():
-    st.title("🔐 Login")
+    st.title("🔐 Login Required")
 
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
 
-    login_button = st.button("Login")
-
-    if login_button:
-        # Simple hardcoded authentication
-        if username == "admin" and password == "admin@1234":
-            st.session_state.logged_in = True
-            st.success("Login successful!")
+    if st.button("Login"):
+        if username == "admin" and password == "1234":
+            st.session_state.authenticated = True
             st.rerun()
         else:
-            st.error("Invalid username or password")
+            st.error("Invalid credentials")
 
 
-# ================================
-# Main Dashboard
-# ================================
-def dashboard():
-    st.title("❤️ Heart Disease Analytics Dashboard")
-
-    st.markdown("""
-    Welcome to the Heart Disease Analytics App.
-
-    Use the sidebar to navigate between pages.
-    """)
-
-    # Logout button
-    if st.sidebar.button("Logout"):
-        st.session_state.logged_in = False
-        st.rerun()
-
-
-# ================================
-# App Routing Logic
-# ================================
-if not st.session_state.logged_in:
+# 🚫 Block everything if not logged in
+if not st.session_state.authenticated:
     login()
-else:
-    dashboard()
+    st.stop()
+
+
+# ✅ Main landing page (optional)
+st.title("❤️ Heart Disease Analytics Dashboard")
+st.success("You are logged in!")
+
+if st.sidebar.button("Logout"):
+    st.session_state.authenticated = False
+    st.rerun()
