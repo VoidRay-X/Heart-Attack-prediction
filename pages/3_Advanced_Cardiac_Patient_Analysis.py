@@ -1,4 +1,11 @@
 import streamlit as st
+
+# 🚫 Protect page
+if "authenticated" not in st.session_state or not st.session_state.authenticated:
+    st.warning("Please login from the main page.")
+    st.stop()
+
+import streamlit as st
 import pandas as pd
 import plotly.express as px
 from data_loader import load_data
