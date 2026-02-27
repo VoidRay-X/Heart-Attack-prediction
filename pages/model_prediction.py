@@ -1,3 +1,11 @@
+import sys
+import os
+from pathlib import Path
+
+# Add the root directory to the path so it can find data_loader.py
+root_path = Path(__file__).parents[1]
+sys.path.append(str(root_path))
+
 import streamlit as st
 import pandas as pd
 from data_loader import HeartDataLoader
