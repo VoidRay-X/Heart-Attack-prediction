@@ -74,7 +74,6 @@ if st.button("Calculate Prediction", use_container_width=True):
         else:
             st.success(f"Low Risk Signal Detected: {prob:.1%}")
             
-        st.info("Note: Any features not provided in this form were set to neutral defaults for the model calculation.")
         
     except Exception as e:
         st.error(f"Prediction Error: {e}")
