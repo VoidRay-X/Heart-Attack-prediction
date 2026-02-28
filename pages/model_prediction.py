@@ -8,7 +8,7 @@ sys.path.append(str(root_path))
 
 import streamlit as st
 import pandas as pd
-from model_loder import HeartDataLoader
+from model_loader import HeartDataLoader
 
 # Set page style
 st.set_page_config(page_title="Heart Risk AI", layout="centered")
