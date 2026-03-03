@@ -42,7 +42,7 @@ with col2:
     activity = st.selectbox("Physical Activity", ["Low", "Medium", "High"])
     thal = st.selectbox("Thalassemia", ["Normal", "Fixed Defect", "Reversable Defect"])
     st_slope = st.selectbox("ST Slope", ["Upsloping", "Flat", "Downsloping"])
-    ecg = st.selectbox("ECG Result", ["Normal", "ST-T wave abnormality", "Left ventricular hypertrophy"])
+    ecg = st.selectbox("ECG Result", ["Normal", "Abnormal", "Hypertrophy"])
 
 st.divider()
 
