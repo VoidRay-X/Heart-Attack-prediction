@@ -242,7 +242,7 @@ with col_right2:
         x="family_history",
         y="percentage",
         color="heart_attack",
-        barmode="stack",
+        barmode="group",
         text=fam_chart["percentage"].round(1),
         color_discrete_sequence=["#FF6B6B", "#8B0000"])
 
