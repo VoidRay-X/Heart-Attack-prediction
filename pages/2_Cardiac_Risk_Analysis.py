@@ -183,17 +183,39 @@ st.divider()
 # ===============================
 col_left2, col_right2 = st.columns(2)
 
-# Diabetes vs Heart Attack
+# Diabetes vs Heart Attack (Percentage)
 with col_left2:
-    st.subheader("Diabetes vs Heart Attack")
+    st.subheader("Diabetes vs Heart Attack (%)")
 
+    # Group data
+    diab_chart = (
+        filtered_df
+        .groupby(["diabetes", "heart_attack"])
+        .size()
+        .reset_index(name="count"))
+
+    # Calculate percentage within each diabetes group
+    diab_chart["percentage"] = (
+        diab_chart["count"] /
+        diab_chart.groupby("diabetes")["count"].transform("sum")
+    ) * 100
+
+    # Create bar chart
     fig3 = px.bar(
-        filtered_df,
+        diab_chart,
         x="diabetes",
+        y="percentage",
         color="heart_attack",
         barmode="group",
-        color_discrete_sequence=["#C04040", "#8B0000"]
-    )
+        text=diab_chart["percentage"].round(1),
+        color_discrete_sequence=["#FF6B6B", "#8B0000"])
+
+    fig3.update_traces(
+        texttemplate='%{text:.1f}%',
+        textposition='outside')
+
+    fig3.update_layout(
+        yaxis_title="Percentage (%)")
 
     st.plotly_chart(fig3, use_container_width=True)
 
