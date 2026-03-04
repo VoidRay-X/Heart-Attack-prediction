@@ -127,43 +127,42 @@ st.divider()
 # ===============================
 col_left, col_right = st.columns(2)
 
-# BMI vs Heart Attack
+# BMI vs Heart Attack (Only True)
 with col_left:
-    st.subheader("Heart Attack by BMI Category")
+    st.subheader("Heart Attack (True) by BMI Category")
 
-    # 1. Calculate counts
+    # Filter only heart attack = True
+    bmi_true = filtered_df[filtered_df["heart_attack"] == True]
+
+    # Count per BMI Category
     bmi_chart = (
-        filtered_df.groupby(["BMI Category", "heart_attack"])
+        bmi_true
+        .groupby("BMI Category")
         .size()
-        .reset_index(name="count")
-    )
+        .reset_index(name="count"))
 
-    # 2. Calculate percentages within each BMI Category group
-    bmi_chart["percentage"] = (
-        bmi_chart["count"] / bmi_chart.groupby("BMI Category")["count"].transform("sum")
-    ) * 100
+    # Convert to percentage of total heart attack cases
+    total = bmi_chart["count"].sum()
+    bmi_chart["percentage"] = (bmi_chart["count"] / total) * 100
 
-    # 3. Create the bar chart
+    # Create bar chart
     fig1 = px.bar(
         bmi_chart,
         x="BMI Category",
-        y="count",
-        color="heart_attack",
-        barmode="group",
-        text="percentage",  # Use the percentage column for labels
-        color_discrete_sequence=["#C04040", "#8B0000"]
-    )
+        y="percentage",
+        text=bmi_chart["percentage"].round(1),
+        color_discrete_sequence=["#8B0000"])
 
-    # 4. Format the labels to show 1 decimal place and a '%' sign
     fig1.update_traces(
-        texttemplate='%{text:.1f}%', 
-        textposition='outside'
-    )
+        texttemplate='%{text:.1f}%',
+        textposition='outside')
 
-    # Optional: Adjust layout to make room for labels
-    fig1.update_layout(yaxis_title="Count", uniformtext_minsize=8, uniformtext_mode='hide')
+    fig1.update_layout(
+        yaxis_title="Percentage (%)",
+        showlegend=False)
 
     st.plotly_chart(fig1, use_container_width=True)
+    
 # Risk Score Distribution
 with col_right:
     st.subheader("Risk Score Distribution")
