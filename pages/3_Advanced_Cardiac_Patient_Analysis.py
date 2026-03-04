@@ -112,18 +112,36 @@ col_left, col_right = st.columns(2)
 with col_left:
     st.subheader("Major Vessels (>1) vs Heart Attack")
 
+    # Filter values > 1
     vessels_df = filtered_df[filtered_df["num_major_vessels"] > 1]
 
+    # Group and calculate percentage
+    grouped = (
+        vessels_df
+        .groupby(["num_major_vessels", "heart_attack"])
+        .size()
+        .reset_index(name="count")
+    )
+
+    # Convert to percentage of total dataset
+    total = grouped["count"].sum()
+    grouped["percentage"] = (grouped["count"] / total) * 100
+
+    # Create bar chart
     fig1 = px.bar(
-        vessels_df,
+        grouped,
         x="num_major_vessels",
+        y="percentage",
         color="heart_attack",
         barmode="group",
+        text=grouped["percentage"].round(2),
         color_discrete_sequence=["#C04040", "#8B0000"]
     )
 
-    st.plotly_chart(fig1, use_container_width=True)
+    fig1.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
+    fig1.update_layout(yaxis_title="Percentage (%)")
 
+    st.plotly_chart(fig1, use_container_width=True)
 # Risk Category vs Gender
 with col_right:
     st.subheader("Heart Attack by Risk Category and Gender")
