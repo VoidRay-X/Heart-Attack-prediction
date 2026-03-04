@@ -219,16 +219,38 @@ with col_left2:
 
     st.plotly_chart(fig3, use_container_width=True)
 
-# Family History Impact
+# Family History Impact (Percentage)
 with col_right2:
-    st.subheader("Family History Impact")
+    st.subheader("Family History Impact (%)")
 
+    # Group data
+    fam_chart = (
+        filtered_df
+        .groupby(["family_history", "heart_attack"])
+        .size()
+        .reset_index(name="count"))
+
+    # Calculate percentage within each family_history group
+    fam_chart["percentage"] = (
+        fam_chart["count"] /
+        fam_chart.groupby("family_history")["count"].transform("sum")
+    ) * 100
+
+    #Create bar chart
     fig4 = px.bar(
-        filtered_df,
+        fam_chart,
         x="family_history",
+        y="percentage",
         color="heart_attack",
-        barmode="group",
-        color_discrete_sequence=["#C04040", "#8B0000"]
-    )
+        barmode="group",   # change to "stack" if you prefer stacked
+        text=fam_chart["percentage"].round(1),
+        color_discrete_sequence=["#FF6B6B", "#8B0000"])
+
+    fig4.update_traces(
+        texttemplate='%{text:.1f}%',
+        textposition='outside')
+
+    fig4.update_layout(
+        yaxis_title="Percentage (%)")
 
     st.plotly_chart(fig4, use_container_width=True)
