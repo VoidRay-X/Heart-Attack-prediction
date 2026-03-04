@@ -1,6 +1,5 @@
 import streamlit as st
 
-# 🚫 Protect page
 if "authenticated" not in st.session_state or not st.session_state.authenticated:
     st.warning("Please login from the main page.")
     st.stop()
