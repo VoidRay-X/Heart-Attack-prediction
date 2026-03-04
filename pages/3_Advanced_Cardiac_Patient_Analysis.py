@@ -120,8 +120,7 @@ with col_left:
         vessels_df
         .groupby(["num_major_vessels", "heart_attack"])
         .size()
-        .reset_index(name="count")
-    )
+        .reset_index(name="count"))
 
     # Convert to percentage of total dataset
     total = grouped["count"].sum()
@@ -135,27 +134,48 @@ with col_left:
         color="heart_attack",
         barmode="group",
         text=grouped["percentage"].round(2),
-        color_discrete_sequence=["#C04040", "#8B0000"]
-    )
+        color_discrete_sequence=["#C04040", "#8B0000"])
 
     fig1.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
     fig1.update_layout(yaxis_title="Percentage (%)")
 
     st.plotly_chart(fig1, use_container_width=True)
+
 # Risk Category vs Gender
 with col_right:
     st.subheader("Heart Attack by Risk Category and Gender")
 
+    # Group data
+    grouped = (
+        filtered_df
+        .groupby(["Risk Category", "gender"])
+        .size()
+        .reset_index(name="count"))
+
+    # Convert to overall percentage
+    total = grouped["count"].sum()
+    grouped["percentage"] = (grouped["count"] / total) * 100
+
+    # Create stacked bar chart
     fig2 = px.bar(
-        filtered_df,
+        grouped,
         x="Risk Category",
+        y="percentage",
         color="gender",
-        barmode="group",
-        color_discrete_sequence=["#C04040", "#8B0000"]
-    )
+        barmode="stack",
+        text=grouped["percentage"].round(2),
+        color_discrete_sequence=["#FF6B6B", "#8B0000"])
+
+    fig2.update_traces(
+        texttemplate='%{text:.2f}%',
+        textposition='inside')
+
+    fig2.update_layout(
+        yaxis_title="Percentage (%)",
+        yaxis=dict(range=[0, 30]))
 
     st.plotly_chart(fig2, use_container_width=True)
-
+    
 st.divider()
 
 # ===============================
