@@ -1,10 +1,10 @@
 import streamlit as st
-
+'''
 # 🚫 Protect page
 if "authenticated" not in st.session_state or not st.session_state.authenticated:
     st.warning("Please login from the main page.")
     st.stop()
-
+'''
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -163,17 +163,21 @@ with col_left2:
 
 # BP vs Cholesterol Scatter
 with col_right2:
-    st.subheader("BP vs Cholesterol")
+
+    st.subheader("BP vs cholesterol")
 
     fig4 = px.scatter(
         filtered_df,
         x="cholesterol_mg_dl",
-        y="blood_pressure_systolic",
-        color="heart_attack",
-        color_discrete_sequence=["#C04040", "#8B0000"]
-    )
+        y="blood_pressure_systolic",)
+
+    # Make all points red
+    fig4.update_traces(
+        marker=dict(color="#C04040", size=8))
+
     fig4.update_layout(
-        xaxis_title="Cholesterol (mg/dL)",
-        yaxis_title="Systolic Blood Pressure"
-    )
+        xaxis_title="Count of cholesterol_mg_dl",
+        yaxis_title="blood_pressure_systolic",
+        showlegend=False)
+
     st.plotly_chart(fig4, use_container_width=True)
