@@ -131,23 +131,39 @@ col_left, col_right = st.columns(2)
 with col_left:
     st.subheader("Heart Attack by BMI Category")
 
+    # 1. Calculate counts
     bmi_chart = (
         filtered_df.groupby(["BMI Category", "heart_attack"])
         .size()
         .reset_index(name="count")
     )
 
+    # 2. Calculate percentages within each BMI Category group
+    bmi_chart["percentage"] = (
+        bmi_chart["count"] / bmi_chart.groupby("BMI Category")["count"].transform("sum")
+    ) * 100
+
+    # 3. Create the bar chart
     fig1 = px.bar(
         bmi_chart,
         x="BMI Category",
         y="count",
         color="heart_attack",
         barmode="group",
+        text="percentage",  # Use the percentage column for labels
         color_discrete_sequence=["#C04040", "#8B0000"]
     )
 
-    st.plotly_chart(fig1, use_container_width=True)
+    # 4. Format the labels to show 1 decimal place and a '%' sign
+    fig1.update_traces(
+        texttemplate='%{text:.1f}%', 
+        textposition='outside'
+    )
 
+    # Optional: Adjust layout to make room for labels
+    fig1.update_layout(yaxis_title="Count", uniformtext_minsize=8, uniformtext_mode='hide')
+
+    st.plotly_chart(fig1, use_container_width=True)
 # Risk Score Distribution
 with col_right:
     st.subheader("Risk Score Distribution")
