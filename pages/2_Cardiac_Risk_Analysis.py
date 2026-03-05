@@ -1,6 +1,5 @@
 import streamlit as st
 
-# 🚫 Protect page
 if "authenticated" not in st.session_state or not st.session_state.authenticated:
     st.warning("Please login from the main page.")
     st.stop()
@@ -13,9 +12,7 @@ from utils import sidebar_filters
 
 st.set_page_config(layout="wide")
 
-# ===============================
 # LOAD DATA
-# ===============================
 df = load_data()
 filtered_df = sidebar_filters(df)
 
@@ -23,9 +20,7 @@ if filtered_df.empty:
     st.warning("No data available for the selected filters.")
     st.stop()
 
-# ===============================
 # HEADER
-# ===============================
 st.markdown("""
     <div style='background-color:#b23a3a;
                 padding:20px;
@@ -39,14 +34,11 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# ===============================
-# DERIVED COLUMNS (DAX LOGIC)
-# ===============================
 
 # High Risk Score (>= 0.75 considered high)
 filtered_df["High Risk Score"] = (filtered_df["heart_disease_risk_score"] >= 0.75).astype(int)
 
-# BMI Category (Your SWITCH logic)
+# BMI Category 
 def bmi_category(bmi):
     if bmi < 18.5:
         return "Underweight"
@@ -63,9 +55,8 @@ def bmi_category(bmi):
 
 filtered_df["BMI Category"] = filtered_df["bmi"].apply(bmi_category)
 
-# ===============================
+
 # KPI CALCULATIONS
-# ===============================
 heart_attack_pct = round(filtered_df["heart_attack"].mean() * 100, 2)
 
 filtered_df["High Risk Score"] = (
@@ -92,9 +83,7 @@ diabetes_heart_attack_rate = round(
     (diabetic_heart_attacks / total_diabetics) * 100
     if total_diabetics > 0 else 0,2)
 
-# ===============================
 # KPI CARD FUNCTION
-# ===============================
 def kpi_card(title, value):
     return f"""
         <div style="
@@ -110,9 +99,7 @@ def kpi_card(title, value):
         </div>
     """
 
-# ===============================
 # KPI SECTION
-# ===============================
 col1, col2, col3, col4 = st.columns(4)
 
 col1.markdown(kpi_card("Heart Attack Rate%", heart_attack_pct), unsafe_allow_html=True)
@@ -122,9 +109,7 @@ col4.markdown(kpi_card("Diabetes Heart Attack Rate (%)", diabetes_heart_attack_r
 
 st.divider()
 
-# ===============================
 # ROW 1
-# ===============================
 col_left, col_right = st.columns(2)
 
 # BMI vs Heart Attack (Only True)
@@ -178,9 +163,7 @@ with col_right:
 
 st.divider()
 
-# ===============================
 # ROW 2
-# ===============================
 col_left2, col_right2 = st.columns(2)
 
 # Diabetes vs Heart Attack (Percentage)
