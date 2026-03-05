@@ -12,9 +12,8 @@ from utils import sidebar_filters
 
 st.set_page_config(layout="wide")
 
-# ===============================
 # LOAD DATA
-# ===============================
+
 df = load_data()
 filtered_df = sidebar_filters(df)
 
@@ -23,9 +22,7 @@ if filtered_df.empty:
     st.warning("No data available for the selected filters.")
     st.stop()
 
-# ===============================
 # HEADER
-# ===============================
 st.markdown("""
     <div style='background-color:#b23a3a;
                 padding:20px;
@@ -39,18 +36,14 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# ===============================
 # KPI CALCULATIONS
-# ===============================
 total_patients = len(filtered_df)
 abnormal_bmi = filtered_df[(filtered_df["bmi"] < 18.5) | (filtered_df["bmi"] >= 25)].shape[0]
 inactive_pct = round((filtered_df["physical_activity"] == "Low").mean() * 100, 2)
 high_chol = filtered_df[filtered_df["cholesterol_mg_dl"] >= 240].shape[0]
 high_bp = filtered_df[filtered_df["blood_pressure_systolic"] >= 140].shape[0]
 
-# ===============================
 # KPI CARD FUNCTION
-# ===============================
 def kpi_card(title, value):
     return f"""
         <div style="
@@ -66,9 +59,7 @@ def kpi_card(title, value):
         </div>
     """
 
-# ===============================
 # KPI SECTION
-# ===============================
 col1, col2, col3, col4, col5 = st.columns(5)
 
 col1.markdown(kpi_card("Total Registered Patients", f"{total_patients:,}"), unsafe_allow_html=True)
@@ -79,9 +70,7 @@ col5.markdown(kpi_card("Patients with High Blood Pressure", high_bp), unsafe_all
 
 st.divider()
 
-# ===============================
 # ROW 1
-# ===============================
 col_left, col_right = st.columns(2)
 
 # Smoking vs Heart Attack (%) stacked bar
@@ -138,9 +127,7 @@ with col_right:
 
 st.divider()
 
-# ===============================
 # ROW 2
-# ===============================
 col_left2, col_right2 = st.columns(2)
 
 # Physical Activity Pie
