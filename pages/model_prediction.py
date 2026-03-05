@@ -10,7 +10,6 @@ import streamlit as st
 import pandas as pd
 from model_loader import HeartDataLoader
 
-# Set page style
 st.set_page_config(page_title="Heart Risk AI", layout="centered")
 
 # Initialize the logic
@@ -27,7 +26,6 @@ except Exception as e:
 st.title("❤️ Cardiovascular Risk Predictor")
 st.write("Enter the patient's primary vitals to calculate the heart attack signal probability.")
 
-# Create Two Columns for the UI
 col1, col2 = st.columns(2)
 
 with col1:
@@ -48,7 +46,7 @@ st.divider()
 
 if st.button("Calculate Prediction", use_container_width=True):
     # Mapping the UI inputs to the DataFrame columns
-    # Ensure these keys match your CSV column names exactly
+    # Ensure these keys match my CSV column names exactly
     user_input = {
         'age': age,
         'gender': gender,
