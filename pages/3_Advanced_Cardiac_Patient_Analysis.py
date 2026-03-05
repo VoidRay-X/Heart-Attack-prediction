@@ -1,6 +1,5 @@
 import streamlit as st
 
-# 🚫 Protect page
 if "authenticated" not in st.session_state or not st.session_state.authenticated:
     st.warning("Please login from the main page.")
     st.stop()
@@ -13,9 +12,7 @@ from utils import sidebar_filters
 
 st.set_page_config(layout="wide")
 
-# ===============================
 # LOAD DATA
-# ===============================
 df = load_data()
 filtered_df = sidebar_filters(df)
 
@@ -23,9 +20,7 @@ if filtered_df.empty:
     st.warning("No data available for the selected filters.")
     st.stop()
 
-# ===============================
 # HEADER
-# ===============================
 st.markdown("""
     <div style='background-color:#b23a3a;
                 padding:20px;
@@ -39,9 +34,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# ===============================
-# RISK CATEGORY (Your SWITCH logic)
-# ===============================
+# RISK CATEGORY
 def risk_category(score):
     if score >= 0.75:
         return "Highly Risky"
@@ -54,9 +47,7 @@ def risk_category(score):
 
 filtered_df["Risk Category"] = filtered_df["heart_disease_risk_score"].apply(risk_category)
 
-# ===============================
 # KPI CALCULATIONS
-# ===============================
 avg_heart_rate = round(filtered_df["heart_rate"].mean(), 1)
 avg_max_hr = round(filtered_df["max_heart_rate"].mean(), 1)
 
@@ -74,9 +65,7 @@ major_vessels_pct = round(
     (vessel_patients / total_patients) * 100
     if total_patients > 0 else 0,2)
 
-# ===============================
 # KPI CARDS
-# ===============================
 def kpi_card(title, value):
     return f"""
         <div style="
@@ -103,9 +92,8 @@ col5.markdown(kpi_card("Patients with ≥2 Major Vessels %", f"{major_vessels_pc
 
 st.divider()
 
-# ===============================
 # ROW 1
-# ===============================
+
 col_left, col_right = st.columns(2)
 
 # Major Vessels vs Attack (only >1)
@@ -178,9 +166,7 @@ with col_right:
     
 st.divider()
 
-# ===============================
 # ST Slope Distribution
-# ===============================
 st.subheader("ST Slope Comparison")
 
 fig3 = px.pie(
