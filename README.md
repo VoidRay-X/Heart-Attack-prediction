@@ -7,3 +7,4 @@ Project Overview
 Project Objectives
 
 Predictive Assessment: Develop a classification model ($0/1$) to identify heart attack risk using medical and lifestyle data for early detection.
+Holistic Analysis: Build a multi-factor model that captures the combined impact of demographic and clinical attributes for higher reliability.
