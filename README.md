@@ -7,6 +7,14 @@ By integrating demographic data, patient lifestyle attributes, and clinical diag
 
 ---
 
+## 🌐 Interactive Dashboards & Applications
+Explore the live deployments of this project to see the predictive model and data insights in action:
+
+* **Interactive Web Application:** [Streamlit Live App](https://heart-attack-prediction-wkcuvefv7wedjkmzppmecw.streamlit.app/) – Input patient demographics, lifestyle factors, and clinical vitals to generate real-time heart attack risk probabilities and feature explanations.
+* **Executive Business Intelligence Dashboard:** [Power BI Service Dashboard](https://app.powerbi.com/view?r=eyJrIjoiM2RhYWFhNGYtYmQzOS00MmU5LTlmZGUtMzVjOGYyZjc1OWJiIiwidCI6IjdlOGZkY2EyLWI4ZjYtNGE4ZC1hNGYwLWQ3ZDg3ZDUzNjE3YSJ9&pageName=0cc6c6c2a4805b71b255) – Comprehensive cohort analysis, hospital resource KPIs, demographic trends, and diagnostic insights tailored for healthcare stakeholders and clinical managers.
+
+---
+
 ## 🎯 Business & Clinical Objectives
 * **Early Risk Detection:** Classify high-risk patients before acute cardiac events occur to enable timely clinical interventions.
 * **Feature Importance & Explainability:** Identify and rank key medical and lifestyle risk factors to support personalized preventative treatment plans.
